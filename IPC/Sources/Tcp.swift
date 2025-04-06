@@ -13,12 +13,16 @@ import func Darwin.connect
 import func Darwin.send
 import func Darwin.recv
 import func Darwin.getpeername
+import func Darwin.shutdown
 import let Darwin.errno
 import let Darwin.SOCK_STREAM
 import let Darwin.SOL_SOCKET
 import let Darwin.SO_KEEPALIVE
 import let Darwin.SOMAXCONN
 import let Darwin.IPPROTO_TCP
+import let Darwin.SHUT_RD
+import let Darwin.SHUT_WR
+import let Darwin.SHUT_RDWR
 import typealias Darwin.sockaddr
 import typealias Darwin.socklen_t
 import typealias Network.NWError
@@ -213,19 +217,6 @@ extension Tcp.Socket {
 		}
 	}
 }
-extension Tcp.Socket {
-	@_disfavoredOverload
-	@inlinable
-	@discardableResult
-	public func shutdown(scope: Shutdown) -> Result<(), NWError> {
-		scope.apply(handle: handle) == 0 ?
-			.success(()) :
-			.failure(.posix(.init(rawValue: errno).unsafelyUnwrapped))
-	}
-	public func shutdown(scope: Shutdown) throws(NWError) {
-		try shutdown(scope: scope).get()
-	}
-}
 extension Tcp {
 	private static func connect(_ descriptor: Int32, _ endpoint: some IPEndpoint) -> Int32 {
 		withUnsafeBytes(of: endpoint) {
@@ -341,5 +332,44 @@ extension Tcp.Socket {
 		get throws(NWError) {
 			try getpeer().get()
 		}
+	}
+}
+@dynamicMemberLookup
+public struct Shutdown: Sendable {
+	public typealias RawValue = UInt8
+	public let rawValue: RawValue
+	public init(rawValue: RawValue = 0b00) {
+		self.rawValue = rawValue
+	}
+}
+extension Shutdown {
+	public subscript<R>(dynamicMember keyPath: KeyPath<RawValue, R>) -> R {
+		rawValue[keyPath: keyPath]
+	}
+}
+extension Shutdown: OptionSet {
+	public static let RECV = Self(rawValue: 0b01)
+	public static let SEND = Self(rawValue: 0b10)
+}
+extension Tcp.Socket {
+	@inlinable
+	func shutdown(_ scope: Shutdown) -> Int32 {
+		switch scope.rawValue & 0b11 {
+		case 0b01:Darwin.shutdown(handle, SHUT_RD)
+		case 0b10:Darwin.shutdown(handle, SHUT_WR)
+		case 0b11:Darwin.shutdown(handle, SHUT_RDWR)
+		default:0
+		}
+	}
+	@_disfavoredOverload
+	@discardableResult
+	@inlinable
+	public func shutdown(_ scope: Shutdown) -> Result<Void, NWError> {
+		shutdown(scope) == .zero ?
+			.success(()) :
+			.failure(.posix(.init(rawValue: errno).unsafelyUnwrapped))
+	}
+	public func shutdown(_ scope: Shutdown) throws (NWError) {
+		try shutdown(scope).get()
 	}
 }
