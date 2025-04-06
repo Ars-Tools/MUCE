@@ -28,6 +28,7 @@ extension SynchroniseSource {
 	public func`export`(by socket: Udp.Socket<some IPEndpoint>, on queue: Optional<DispatchQueue> = .none) -> some AsyncSequence<(), any Error> {
 		socket.send(stream: socket.recv(on: queue).compactMap { (packet, endpoint) in
 			let response = Array<UInt8>(unsafeUninitializedCapacity: MemoryLayout<CMTime>.stride * 4) {
+				assert($0.count == MemoryLayout<CMTime>.stride * 4)
 				guard $0.initialize(fromContentsOf: packet) == MemoryLayout<CMTime>.stride * 2 else { return }
 				$0.withMemoryRebound(to: CMTime.self) {
 					($0[2], $0[3]) = (sign, time)
