@@ -334,26 +334,28 @@ extension Tcp.Socket {
 		}
 	}
 }
-@dynamicMemberLookup
-public struct Shutdown: Sendable {
-	public typealias RawValue = UInt8
-	public let rawValue: RawValue
-	public init(rawValue: RawValue = 0b00) {
-		self.rawValue = rawValue
+extension Tcp {
+	@dynamicMemberLookup
+	public struct Shutdown: Sendable {
+		public typealias RawValue = UInt8
+		public let rawValue: RawValue
+		public init(rawValue: RawValue = 0b00) {
+			self.rawValue = rawValue
+		}
 	}
 }
-extension Shutdown {
+extension Tcp.Shutdown {
 	public subscript<R>(dynamicMember keyPath: KeyPath<RawValue, R>) -> R {
 		rawValue[keyPath: keyPath]
 	}
 }
-extension Shutdown: OptionSet {
-	public static let RECV = Self(rawValue: 0b01)
-	public static let SEND = Self(rawValue: 0b10)
+extension Tcp.Shutdown: OptionSet {
+	public static let Recv = Self(rawValue: 0b01)
+	public static let Send = Self(rawValue: 0b10)
 }
 extension Tcp.Socket {
 	@inlinable
-	func shutdown(_ scope: Shutdown) -> Int32 {
+	func shutdown(_ scope: Tcp.Shutdown) -> Int32 {
 		switch scope.rawValue & 0b11 {
 		case 0b01:Darwin.shutdown(handle, SHUT_RD)
 		case 0b10:Darwin.shutdown(handle, SHUT_WR)
@@ -364,12 +366,12 @@ extension Tcp.Socket {
 	@_disfavoredOverload
 	@discardableResult
 	@inlinable
-	public func shutdown(_ scope: Shutdown) -> Result<Void, NWError> {
+	public func shutdown(_ scope: Tcp.Shutdown) -> Result<Void, NWError> {
 		shutdown(scope) == .zero ?
 			.success(()) :
 			.failure(.posix(.init(rawValue: errno).unsafelyUnwrapped))
 	}
-	public func shutdown(_ scope: Shutdown) throws (NWError) {
+	public func shutdown(_ scope: Tcp.Shutdown) throws (NWError) {
 		try shutdown(scope).get()
 	}
 }
