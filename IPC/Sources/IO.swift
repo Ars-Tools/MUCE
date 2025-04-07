@@ -221,20 +221,20 @@ extension IO {
 		public static let Out = Writer(handle: STDOUT_FILENO) // Never close
 		public static let Err = Writer(handle: STDERR_FILENO) // Never close
 	}
-	public static func Pipe() throws (NWError) -> (Reader, Writer) {
-		let result = Array<Int32>(unsafeUninitializedCapacity: 2) {
-			$1 = pipe($0.baseAddress) == 0 ? $0.count : 0
+	@_disfavoredOverload
+	@inlinable
+	public static func Pipe() -> Result<(Reader, Writer), NWError> {
+		withUnsafeTemporaryAllocation(of: Int32.self, capacity: 2) {
+			if pipe($0.baseAddress) == 0,
+			   case.some(let reader) = $0.first.map(Reader.init(handle:)),
+			   case.some(let writer) = $0.last.map(Writer.init(handle:)) {
+				.success((reader, writer))
+			} else {
+				.failure(.posix(.init(rawValue: errno).unsafelyUnwrapped))
+			}
 		}
-		let reader = result.first.map(Reader.init(handle:))
-		let writer = result.last.map(Writer.init(handle:))
-		guard let reader, let writer else {
-			throw.posix(.init(rawValue: errno).unsafelyUnwrapped)
-		}
-		return (reader, writer)
 	}
-}
-extension IO {
-	public enum Mach {
-		
+	public static func Pipe() throws (NWError) -> (Reader, Writer) {
+		try Pipe().get()
 	}
 }
