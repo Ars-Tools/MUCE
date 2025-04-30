@@ -15,8 +15,9 @@ let package = Package(
 			targets: [
 				"IPC",
 				"CLK",
-//				"RTP",
+				"RTP",
 				"OSC",
+				"AAC",
 			]
 		)
     ],
@@ -49,16 +50,16 @@ let package = Package(
 			dependencies: ["CLK"],
 			path: "CLK/Tests"
 		),
-//		.target(
-//			name: "RTP",
-//			dependencies: ["IPC"],
-//			path: "RTP/Sources"
-//		),
-//		.testTarget(
-//			name: "RTPTests",
-//			dependencies: ["RTP"],
-//			path: "RTP/Tests"
-//		),
+		.target(
+			name: "RTP",
+			dependencies: ["IPC"],
+			path: "RTP/Sources"
+		),
+		.testTarget(
+			name: "RTPTests",
+			dependencies: ["RTP"],
+			path: "RTP/Tests"
+		),
 		.target(
 			name: "OSC",
 			dependencies: ["IPC"],
@@ -68,6 +69,16 @@ let package = Package(
 			name: "OSCTests",
 			dependencies: ["OSC"],
 			path: "OSC/Tests"
+		),
+		.target(
+			name: "AAC",
+			dependencies: ["IPC"],
+			path: "AAC/Sources"
+		),
+		.testTarget(
+			name: "AACTests",
+			dependencies: ["AAC"],
+			path: "AAC/Tests"
 		)
     ]
 )
