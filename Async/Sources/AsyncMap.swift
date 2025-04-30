@@ -19,19 +19,19 @@ extension Sequence where Element: Sendable {
 			}
 		}
 	}
-	@_disfavoredOverload
+//	@_disfavoredOverload
 	@inlinable
-	public func map<Result: Sendable, Failure: Error>(_ closure: @escaping @Sendable (Element) async throws (Failure) -> Result) async rethrows -> sending Array<Result> {
-		try await dictionary(closure).map(\.value)
+	public func asyncMap<Result: Sendable, Failure: Error>(_ closure: @escaping @Sendable (Element) async throws (Failure) -> Result) async rethrows -> sending Array<Result> {
+		try await dictionary(closure).sorted(using: KeyPathComparator(\.key)).map(\.value)
 	}
-	@_disfavoredOverload
+//	@_disfavoredOverload
 	@inlinable
-	public func compactMap<Result: Sendable, Failure: Error>(_ closure: @escaping @Sendable (Element) async throws (Failure) -> Optional<Result>) async rethrows -> sending Array<Result> {
+	public func asyncCompactMap<Result: Sendable, Failure: Error>(_ closure: @escaping @Sendable (Element) async throws (Failure) -> Optional<Result>) async rethrows -> sending Array<Result> {
 		try await dictionary(closure).sorted(using: KeyPathComparator(\.key)).compactMap(\.value)
 	}
-	@_disfavoredOverload
+//	@_disfavoredOverload
 	@inlinable
-	public func flatMap<Result: Sendable, Failure: Error>(_ closure: @escaping @Sendable (Element) async throws (Failure) -> Array<Result>) async rethrows -> sending Array<Result> {
+	public func asyncFlatMap<Result: Sendable, Failure: Error>(_ closure: @escaping @Sendable (Element) async throws (Failure) -> Array<Result>) async rethrows -> sending Array<Result> {
 		try await dictionary(closure).sorted(using: KeyPathComparator(\.key)).flatMap(\.value)
 	}
 }
