@@ -37,18 +37,16 @@ extension RandomAccessCollection where Index: Strideable, Index.Stride == Int, S
 	@_disfavoredOverload
 	@inlinable
 	public func parallelCompactMap<R>(_ transform: (Element) throws -> Optional<R>) rethrows -> Array<R> {
-		let result = try parallelMap(transform) as Array<Optional<R>>
-		return result.compactMap(\.self)
+		try parallelMap(transform).compactMap(\.self)
 	}
 	@inlinable
-	public func parallelFlatMap<R: Sequence>(_ transform: (Element) -> R) -> Array<R.Element> {
+	public func parallelFlatMap<R>(_ transform: (Element) -> some Sequence<R>) -> Array<R> {
 		parallelMap(transform).flatMap(\.self)
 	}
 	@_disfavoredOverload
 	@inlinable
-	public func parallelFlatMap<R: Sequence>(_ transform: (Element) throws -> R) rethrows -> Array<R.Element> {
-		let result = try parallelMap(transform) as Array<R>
-		return result.flatMap(\.self)
+	public func parallelFlatMap<R>(_ transform: (Element) throws -> some Sequence<R>) rethrows -> Array<R> {
+		try parallelMap(transform).flatMap(\.self)
 	}
 }
 
