@@ -18,6 +18,7 @@ let package = Package(
 				"RTP",
 				"OSC",
 				"AAC",
+				"Async"
 			]
 		)
     ],
