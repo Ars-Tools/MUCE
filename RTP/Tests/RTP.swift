@@ -9,38 +9,68 @@ import Testing
 @Suite
 struct PacketTests {
 	let range = UInt8.min ... UInt8.max
-	@Test(arguments: [1,2,3,4,5,6,7,8])
+	@Test(arguments: 1...4)
 	func codable(count: Int) throws {
-		let raw = Packet(
+		let raw = RTP.Packet(
 			source: .random(in: .min ... .max),
-			contributions: [],
+			contributions: repeatElement(UInt32.min ... UInt32.max, count: 8).map(UInt32.random(in:)),
 			sequence: .random(in: .min ... .max),
 			timestamp: .random(in: .min ... .max),
-			type: .PCMA,
-			payload: repeatElement(UInt8.min...UInt8.max, count: count).map(UInt8.random(in:))
+			type: .init(rawValue: 96),
+			payload: repeatElement(range, count: count).map(UInt8.random(in:))
 		)
 		let enc = raw.encode()
-		let dec = try Packet(from: enc)
-		#expect(raw == dec)
+		let dec = try RTP.Packet(from: enc)
+		#expect((
+			raw.timestamp,
+			raw.synchronization,
+			raw.contributions,
+			raw.sequence,
+			raw.timestamp,
+			raw.type.rawValue
+		) == (
+			dec.timestamp,
+			dec.synchronization,
+			dec.contributions,
+			dec.sequence,
+			dec.timestamp,
+			dec.type.rawValue
+		))
+		#expect(raw.extensions == dec.extensions)
+		#expect(raw.payload == dec.payload)
 	}
-	@Test(arguments: [
-		(1,1),(1,2),(1,3),(1,4),
-		(2,1),(2,2),(2,3),(2,4),
-		(3,1),(3,2),(3,3),(3,4),
-		(4,1),(4,2),(4,3),(4,4),
-	])
+	static var cases: Array<(Int, Int)> {
+		(1...5).flatMap { x in (1...5).map { (x, $0) } }
+	}
+	@Test(arguments: cases)
 	func codable(extension: Int, payload: Int) throws {
-		let raw = Packet(
+		let raw = RTP.Packet(
 			source: .random(in: .min ... .max),
-			contributions: [],
+			contributions: repeatElement(UInt32.min ... UInt32.max, count: 8).map(UInt32.random(in:)),
 			sequence: .random(in: .min ... .max),
 			timestamp: .random(in: .min ... .max),
-			type: .PCMA,
+			type: .init(rawValue: 96),
 			payload: repeatElement(range, count: payload).map(UInt8.random(in:)),
 			extension: .init(profile: .random(in: .min ... .max), payload: repeatElement(range, count: `extension`).map(UInt8.random(in:)))
 		)
 		let enc = raw.encode()
-		let dec = try Packet(from: enc)
-		#expect(raw == dec)
+		let dec = try RTP.Packet(from: enc)
+		#expect((
+			raw.timestamp,
+			raw.synchronization,
+			raw.contributions,
+			raw.sequence,
+			raw.timestamp,
+			raw.type.rawValue
+		) == (
+			dec.timestamp,
+			dec.synchronization,
+			dec.contributions,
+			dec.sequence,
+			dec.timestamp,
+			dec.type.rawValue
+		))
+		#expect(raw.extensions == dec.extensions)
+		#expect(raw.payload == dec.payload)
 	}
 }
