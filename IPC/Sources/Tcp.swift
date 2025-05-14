@@ -199,7 +199,7 @@ extension Tcp.Socket {
 			}
 			source.setEventHandler { [weak source] in
 				guard let source else { return }
-				do throws(NWError) {
+				do throws (NWError) {
 					switch source.data {
 					case ...0:
 						source.cancel()
