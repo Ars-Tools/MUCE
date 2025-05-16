@@ -11,17 +11,32 @@ let package = Package(
 	],
     products: [
 		.library(
-			name: "MUCE",
-			targets: [
-				"IPC",
-				"CLK",
-				"RTP",
-				"OSC",
-				"AAC",
-				"Async"
-			]
-		)
+			name: "MUCE.Socket+",
+			type: .dynamic,
+			targets: ["IPC"]
+		),
+		.library(
+			name: "MUCE.Essential",
+			type: .dynamic,
+			targets: ["Async"]
+		),
+		.library(
+			name: "MUCE.Chrono",
+			type: .dynamic,
+			targets: ["CLK"]
+		),
+		.library(
+			name: "MUCE.OSC",
+			targets: ["OSC"]
+		),
+		.library(
+			name: "MUCE.RTP",
+			targets: ["RTP"]
+		),
     ],
+	dependencies: [
+		.package(url: "https://github.com/ars-tools/muse", branch: "release")
+	],
     targets: [
 		.target(
 			name: "Async",
@@ -43,7 +58,7 @@ let package = Package(
 		),
 		.target(
 			name: "CLK",
-			dependencies: ["IPC"],
+			dependencies: ["IPC", .product(name: "MUSE.Primitive", package: "MUSE")],
 			path: "CLK/Sources"
 		),
 		.testTarget(
@@ -63,7 +78,7 @@ let package = Package(
 		),
 		.target(
 			name: "OSC",
-			dependencies: ["IPC"],
+			dependencies: ["IPC", .product(name: "MUSE.Primitive", package: "MUSE")],
 			path: "OSC/Sources"
 		),
 		.testTarget(
