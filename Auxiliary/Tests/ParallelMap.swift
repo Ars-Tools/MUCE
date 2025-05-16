@@ -6,7 +6,7 @@
 //
 import Testing
 import typealias Foundation.Thread
-@testable import Async
+@testable import Auxiliary
 @Suite
 struct ParallelMap {
 	@Test(.timeLimit(.minutes(1)))

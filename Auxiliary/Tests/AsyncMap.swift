@@ -5,8 +5,7 @@
 //  Created by Kota on 4/5/R7.
 //
 import Testing
-
-@testable import Async
+@testable import Auxiliary
 @Suite
 struct AsyncMapTests {
 	@Test(.timeLimit(.minutes(1)))
