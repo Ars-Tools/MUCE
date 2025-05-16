@@ -9,7 +9,7 @@ import typealias Foundation.TimeInterval
 import typealias CoreMedia.CMTime
 import protocol Synchronization.AtomicRepresentable
 import func Darwin.modf
-import func Numerics.gcd
+import func Auxiliary.gcd
 @frozen public struct TimeTag: RawRepresentable & Sendable & BitwiseCopyable & Codable {
 	public typealias RawValue = UInt64
 	public let rawValue: RawValue
