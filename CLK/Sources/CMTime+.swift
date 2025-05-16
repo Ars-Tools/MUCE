@@ -5,9 +5,9 @@
 //  Created by Kota on 4/2/R7.
 //
 @_exported @preconcurrency public import CoreMedia
-import func Numerics.gcd
-import func Numerics.div
-import func Numerics.mod
+import func Auxiliary.gcd
+import func Auxiliary.div
+import func Auxiliary.mod
 @preconcurrency import func Darwin.modf
 extension CMTime {
 	@inlinable
@@ -79,7 +79,7 @@ extension CMTime {
 extension CMTime {
 	@inlinable
 	@inline(__always)
-	public func times(of amount: CMTime, rounding method: Optional<CMTimeRoundingMethod> = .none) -> (count: Int, remainder: CMTime) {
+	public func times(of amount: CMTime, rounding method: Optional<CMTimeRoundingMethod> = .none) -> (quotient: Int, remainder: CMTime) {
 		guard isNumeric, amount.isNumeric else { return (0, .invalid) }
 		switch (Int128(value) * Int128(amount.timescale), Int128(timescale) * Int128(amount.value)) {
 		case(.zero,.zero):
