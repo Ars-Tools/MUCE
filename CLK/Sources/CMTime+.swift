@@ -5,16 +5,9 @@
 //  Created by Kota on 4/2/R7.
 //
 @_exported @preconcurrency public import CoreMedia
-//@_exported @preconcurrency public import typealias CoreMedia.CMTime
-//@preconcurrency import typealias CoreMedia.CMTimeValue
-//@preconcurrency import typealias CoreMedia.CMTimeScale
-//@preconcurrency import typealias CoreMedia.CMTimeRoundingMethod
-//@preconcurrency import func CoreMedia.CMTimeAdd
-//@preconcurrency import func CoreMedia.CMTimeSubtract
-//@preconcurrency import func CoreMedia.CMTimeGetSeconds
-//@preconcurrency import func CoreMedia.CMTimeMultiply
-//@preconcurrency import func CoreMedia.CMTimeMultiplyByRatio
-//@preconcurrency import func CoreMedia.CMTimeAbsoluteValue
+import func Numerics.gcd
+import func Numerics.div
+import func Numerics.mod
 @preconcurrency import func Darwin.modf
 extension CMTime {
 	@inlinable
