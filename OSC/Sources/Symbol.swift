@@ -5,7 +5,7 @@
 //  Created by Kota on 4/1/R7.
 //
 @dynamicMemberLookup
-public struct Symbol: RawRepresentable & Sendable {
+@frozen public struct Symbol: RawRepresentable & Sendable {
 	public typealias RawValue = Substring
 	public var rawValue: RawValue
 	public init(rawValue: RawValue) {
