@@ -5,8 +5,9 @@
 //  Created by Kota on 4/1/R7.
 //
 import typealias CoreImage.CIColor
+import protocol Synchronization.AtomicRepresentable
 @dynamicMemberLookup
-public struct Color: RawRepresentable & Sendable & BitwiseCopyable & Codable {
+@frozen public struct Color: RawRepresentable & Sendable & BitwiseCopyable & Codable {
 	public typealias RawValue = SIMD4<UInt8>
 	public var rawValue: RawValue
 	public init(rawValue: RawValue) {
@@ -66,6 +67,14 @@ extension Color {
 extension Color {
 	public init(_ color: CIColor) {
 		rawValue = .init(SIMD4<Float64>(.init(color.red),.init(color.green),.init(color.blue),.init(color.alpha)) * 255.0)
+	}
+}
+extension Color: AtomicRepresentable {
+	public static func encodeAtomicRepresentation(_ value: consuming Self) -> RawValue {
+		value.rawValue
+	}
+	public static func decodeAtomicRepresentation(_ storage: consuming RawValue) -> Self {
+		.init(rawValue: storage)
 	}
 }
 extension CIColor {
