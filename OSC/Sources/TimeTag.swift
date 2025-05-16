@@ -7,10 +7,11 @@
 import typealias Foundation.Date
 import typealias Foundation.TimeInterval
 import typealias CoreMedia.CMTime
+import protocol Synchronization.AtomicRepresentable
 import func Darwin.modf
+import func Numerics.gcd
 @frozen public struct TimeTag: Sendable & BitwiseCopyable & Codable {
-	@usableFromInline
-	typealias RawValue = UInt64
+	public typealias RawValue = UInt64
 	@usableFromInline
 	let rawValue: RawValue
 }
@@ -54,6 +55,14 @@ extension TimeTag: Comparable {
 	@inlinable
 	public static func>=(lhs: TimeTag, rhs: TimeTag) -> Bool {
 		lhs.rawValue>=rhs.rawValue
+	}
+}
+extension TimeTag: AtomicRepresentable {
+	public static func encodeAtomicRepresentation(_ value: consuming Self) -> RawValue {
+		value.rawValue
+	}
+	public static func decodeAtomicRepresentation(_ storage: consuming RawValue) -> Self {
+		.init(rawValue: storage)
 	}
 }
 extension TimeTag: CustomStringConvertible {
@@ -108,10 +117,6 @@ extension TimeTag {
 		let fraction = adjust.value % .init(adjust.timescale)
 		rawValue = .init(integer) << 32 + .init(fraction) << 2
 	}
-}
-@inline(__always)
-private func gcd<T: BinaryInteger>(_ x: T, _ y: T) -> T {
-	y == 0 ? x : gcd(y, x % y)
 }
 extension CMTime {
 	public init(_ time: TimeTag) { // 31 -> (2), 32 -> (1), 33 -> (1)
