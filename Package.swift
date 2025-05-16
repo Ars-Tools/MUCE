@@ -11,14 +11,9 @@ let package = Package(
 	],
     products: [
 		.library(
-			name: "MUCE.Socket+",
+			name: "MUCE.Communications",
 			type: .dynamic,
-			targets: ["IPC"]
-		),
-		.library(
-			name: "MUCE.Essential",
-			type: .dynamic,
-			targets: ["Async"]
+			targets: ["IPC", "MPC"]
 		),
 		.library(
 			name: "MUCE.Chrono",
@@ -33,19 +28,20 @@ let package = Package(
 			name: "MUCE.RTP",
 			targets: ["RTP"]
 		),
+		.library(
+			name: "MUCE.Auxiliary",
+			targets: ["Auxiliary"]
+		),
     ],
-	dependencies: [
-		.package(url: "https://github.com/ars-tools/muse", branch: "release")
-	],
     targets: [
 		.target(
-			name: "Async",
-			path: "Async/Sources"
+			name: "Auxiliary",
+			path: "Auxiliary/Sources"
 		),
 		.testTarget(
-			name: "AsyncTests",
-			dependencies: ["Async"],
-			path: "Async/Tests"
+			name: "AuxiliaryTests",
+			dependencies: ["Auxiliary"],
+			path: "Auxiliary/Tests"
 		),
 		.target(
 			name: "IPC",
@@ -57,8 +53,18 @@ let package = Package(
 			path: "IPC/Tests"
 		),
 		.target(
+			name: "MPC",
+			dependencies: ["IPC"],
+			path: "MPC/Sources"
+		),
+		.testTarget(
+			name: "MPCTests",
+			dependencies: ["MPC"],
+			path: "MPC/Tests"
+		),
+		.target(
 			name: "CLK",
-			dependencies: ["IPC", .product(name: "MUSE.Primitive", package: "MUSE")],
+			dependencies: ["IPC", "Auxiliary"],
 			path: "CLK/Sources"
 		),
 		.testTarget(
@@ -78,7 +84,7 @@ let package = Package(
 		),
 		.target(
 			name: "OSC",
-			dependencies: ["IPC", .product(name: "MUSE.Primitive", package: "MUSE")],
+			dependencies: ["IPC", "Auxiliary"],
 			path: "OSC/Sources"
 		),
 		.testTarget(
