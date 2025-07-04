@@ -12,12 +12,10 @@ let package = Package(
     products: [
 		.library(
 			name: "MUCE.Communications",
-			type: .dynamic,
 			targets: ["IPC", "MPC"]
 		),
 		.library(
 			name: "MUCE.Chrono",
-			type: .dynamic,
 			targets: ["CLK"]
 		),
 		.library(
