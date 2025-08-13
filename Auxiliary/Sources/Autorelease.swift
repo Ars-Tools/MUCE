@@ -44,7 +44,7 @@ public enum Autorelease {
 		}
 	}
 	public final class Opaque: @unchecked Sendable {
-		@usableFromInline let pointer: OpaquePointer
+		public let pointer: OpaquePointer
 		@usableFromInline let release: @convention(c) (OpaquePointer) -> Void
 		@inlinable
 		public init(pointer address: OpaquePointer, release closure: @convention(c) (OpaquePointer) -> Void) {
@@ -56,7 +56,7 @@ public enum Autorelease {
 		}
 	}
 	public final class Object<Pointee>: @unchecked Sendable {
-		@usableFromInline let reference: UnsafeMutablePointer<Pointee>
+		public let reference: UnsafeMutablePointer<Pointee>
 		@usableFromInline let finalizer: @convention(thin) (UnsafeMutablePointer<Pointee>) -> Void
 		public init(object address: UnsafeMutablePointer<Pointee>, free closure: @convention(thin) (UnsafeMutablePointer<Pointee>) -> Void) {
 			reference = address
