@@ -12,7 +12,7 @@ let package = Package(
     products: [
 		.library(
 			name: "MUCE.Communications",
-			targets: ["IPC", "MPC"]
+			targets: ["IPC"]
 		),
 		.library(
 			name: "MUCE.Chrono",
@@ -50,16 +50,16 @@ let package = Package(
 			dependencies: ["IPC"],
 			path: "IPC/Tests"
 		),
-		.target(
-			name: "MPC",
-			dependencies: ["IPC"],
-			path: "MPC/Sources"
-		),
-		.testTarget(
-			name: "MPCTests",
-			dependencies: ["MPC"],
-			path: "MPC/Tests"
-		),
+//		.target(
+//			name: "MPC",
+//			dependencies: ["IPC"],
+//			path: "MPC/Sources"
+//		),
+//		.testTarget(
+//			name: "MPCTests",
+//			dependencies: ["MPC"],
+//			path: "MPC/Tests"
+//		),
 		.target(
 			name: "CLK",
 			dependencies: ["IPC", "Auxiliary"],
@@ -90,15 +90,15 @@ let package = Package(
 			dependencies: ["OSC"],
 			path: "OSC/Tests"
 		),
-		.target(
-			name: "AAC",
-			dependencies: ["IPC"],
-			path: "AAC/Sources"
-		),
-		.testTarget(
-			name: "AACTests",
-			dependencies: ["AAC"],
-			path: "AAC/Tests"
-		)
+//		.target(
+//			name: "AAC",
+//			dependencies: ["IPC"],
+//			path: "AAC/Sources"
+//		),
+//		.testTarget(
+//			name: "AACTests",
+//			dependencies: ["AAC"],
+//			path: "AAC/Tests"
+//		)
     ]
 )
