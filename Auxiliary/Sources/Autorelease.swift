@@ -29,18 +29,6 @@ import Darwin.POSIX
 import typealias Foundation.FileManager
 import typealias Foundation.POSIXError
 public enum Autorelease {
-	public final class Object<Pointee>: @unchecked Sendable {
-		@usableFromInline let reference: UnsafeMutablePointer<Pointee>
-		@usableFromInline let finalizer: @convention(thin) (UnsafeMutablePointer<Pointee>) -> Void
-		@inlinable
-		init(object address: UnsafeMutablePointer<Pointee>, free closure: @convention(thin) (UnsafeMutablePointer<Pointee>) -> Void) {
-			reference = address
-			finalizer = closure
-		}
-		deinit {
-			finalizer(reference)
-		}
-	}
 	public final class Memory: @unchecked Sendable {
 		@usableFromInline let start: UnsafeMutableRawPointer
 		@usableFromInline let count: Int
@@ -59,12 +47,23 @@ public enum Autorelease {
 		@usableFromInline let pointer: OpaquePointer
 		@usableFromInline let release: @convention(c) (OpaquePointer) -> Void
 		@inlinable
-		init(pointer address: OpaquePointer, release closure: @convention(c) (OpaquePointer) -> Void) {
+		public init(pointer address: OpaquePointer, release closure: @convention(c) (OpaquePointer) -> Void) {
 			pointer = address
 			release = closure
 		}
 		deinit {
 			release(pointer)
+		}
+	}
+	public final class Object<Pointee>: @unchecked Sendable {
+		@usableFromInline let reference: UnsafeMutablePointer<Pointee>
+		@usableFromInline let finalizer: @convention(thin) (UnsafeMutablePointer<Pointee>) -> Void
+		public init(object address: UnsafeMutablePointer<Pointee>, free closure: @convention(thin) (UnsafeMutablePointer<Pointee>) -> Void) {
+			reference = address
+			finalizer = closure
+		}
+		deinit {
+			finalizer(reference)
 		}
 	}
 }
