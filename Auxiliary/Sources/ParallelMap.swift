@@ -5,20 +5,17 @@
 //  Created by Kota on 3/30/R7.
 //
 @preconcurrency import typealias Dispatch.DispatchQueue
-extension RandomAccessCollection where Index: Strideable, Index.Stride == Int, Self: Sendable {
+extension RandomAccessCollection where Index: Strideable, Index.Stride == Int {
 	@inlinable
 	public func parallelMap<R>(_ transform: (Element) -> R) -> Array<R> {
-		withoutActuallyEscaping(transform) {
-			let transform = unsafeBitCast($0, to: (@Sendable (Element) -> R).self)
-			return.init(unsafeUninitializedCapacity: count) {
-				let source = UInt(bitPattern: $0.baseAddress)
-				DispatchQueue.concurrentPerform(iterations: $0.count) {
-					UnsafeMutablePointer<R>(bitPattern: source)?
-						.advanced(by: $0)
-						.initialize(to: transform(self[startIndex.advanced(by: $0)]))
-				}
-				$1 = $0.count
+		.init(unsafeUninitializedCapacity: count) {
+			guard let memory = $0.baseAddress else { return }
+			withoutActuallyEscaping(transform) { transform in
+				DispatchQueue.concurrentPerform(iterations: count, execute: unsafeBitCast({
+					memory.advanced(by: $0).initialize(to: transform(self[startIndex.advanced(by: $0)]))
+				}, to: (@Sendable(Int)->Void).self))
 			}
+			$1 = $0.count
 		}
 	}
 	@_disfavoredOverload
