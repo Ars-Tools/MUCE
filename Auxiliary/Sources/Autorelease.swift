@@ -132,8 +132,7 @@ extension Autorelease.Memory {
 	public func withUnsafeBytes<R>(_ body: (UnsafeRawBufferPointer) throws -> R) rethrows -> R {
 		try body(.init(start: start, count: count))
 	}
-	public func withUnsafeMutableBytes<R>(_ body: (inout UnsafeMutableRawBufferPointer) throws -> R) rethrows -> R {
-		var target = UnsafeMutableRawBufferPointer(start: start, count: count)
-		return try body(&target)
+	public func withUnsafeMutableBytes<R>(_ body: (UnsafeMutableRawBufferPointer) throws -> R) rethrows -> R {
+		try body(.init(start: start, count: count))
 	}
 }
