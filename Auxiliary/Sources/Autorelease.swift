@@ -30,8 +30,8 @@ import typealias Foundation.FileManager
 import typealias Foundation.POSIXError
 public enum Autorelease {
 	public final class Memory: @unchecked Sendable {
-		@usableFromInline let start: UnsafeMutableRawPointer
-		@usableFromInline let count: Int
+		public let start: UnsafeMutableRawPointer
+		public let count: Int
 		@usableFromInline let deallocator: @convention(c) (UnsafeMutableRawPointer, Int) -> Void
 		@inlinable
 		init(start: UnsafeMutableRawPointer, count: Int, deallocator: @convention(c) (UnsafeMutableRawPointer, Int) -> Void) {
@@ -58,6 +58,7 @@ public enum Autorelease {
 	public final class Object<Pointee>: @unchecked Sendable {
 		public let reference: UnsafeMutablePointer<Pointee>
 		@usableFromInline let finalizer: @convention(thin) (UnsafeMutablePointer<Pointee>) -> Void
+        @inlinable
 		public init(object address: UnsafeMutablePointer<Pointee>, free closure: @convention(thin) (UnsafeMutablePointer<Pointee>) -> Void) {
 			reference = address
 			finalizer = closure
@@ -68,15 +69,18 @@ public enum Autorelease {
 	}
 }
 extension Autorelease.Memory {
+    @inlinable
 	public convenience init(byteCount: Int, alignment: Int) {
 		self.init(start: .allocate(byteCount: byteCount, alignment: alignment), count: byteCount) { start, count in start.deallocate() }
 	}
+    @inlinable
 	public convenience init<T: BitwiseCopyable>(repeating element: T, count: Int) {
 		self.init(byteCount: MemoryLayout<T>.stride * count, alignment: MemoryLayout<T>.alignment)
 		start.initializeMemory(as: T.self, repeating: element, count: count)
 	}
 }
 extension Autorelease.Memory {
+    @inlinable
 	public convenience init(ro path: String) throws (POSIXError) { // cow
 		let descriptor = switch open(path, O_RDONLY) {
 		case ..<0:
@@ -101,6 +105,7 @@ extension Autorelease.Memory {
 			self.init(start: start, count: capacity) { munmap($0, $1) }
 		}
 	}
+    @inlinable
 	public convenience init(rw path: String, minimum capacity: Int = 0, release: Bool = false) throws (POSIXError) {
 		let descriptor = switch open(path, O_RDWR|O_CREAT, S_IWUSR|S_IRUSR|S_IRGRP|S_IROTH) {
 		case ..<0:
@@ -129,9 +134,11 @@ extension Autorelease.Memory {
 	}
 }
 extension Autorelease.Memory {
+    @inlinable
 	public func withUnsafeBytes<R>(_ body: (UnsafeRawBufferPointer) throws -> R) rethrows -> R {
 		try body(.init(start: start, count: count))
 	}
+    @inlinable
 	public func withUnsafeMutableBytes<R>(_ body: (UnsafeMutableRawBufferPointer) throws -> R) rethrows -> R {
 		try body(.init(start: start, count: count))
 	}
