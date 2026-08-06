@@ -90,7 +90,11 @@ extension Synchronisable {
 		}
 		let`export` = Task {
 			try await socket.send(stream: notify.tick(every: 1, on: queue).map { elapse in
-				(withUnsafeBytes(of: (sign, base), Array<UInt8>.init), endpoint)
+                let packet = withUnsafeBytes(of: (sign, base), Array<UInt8>.init)
+                if let subsystem {
+                    os_log(.debug, log: subsystem, "request: %{public}@ to %{public}@", String(describing: packet), String(describing: endpoint))
+                }
+                return (packet, endpoint)
 			}, on: queue).await
 		}
 		try await ((), ()) = (`import`.value, `export`.value)
