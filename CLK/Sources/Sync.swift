@@ -25,7 +25,7 @@ extension SynchroniseSource {
     public func`export`(to endpoint: some IPEndpoint, on queue: Optional<DispatchQueue> = .none, subsystem: Optional<OSLog> = .none) async throws {
 		try await export(by: .init(on: endpoint), on: queue, subsystem: subsystem).await
 	}
-    public func`export`(by socket: Udp.Socket<some IPEndpoint>, on queue: Optional<DispatchQueue> = .none, subsystem: Optional<OSLog> = .some(.init(subsystem: "CLK.Export", category: .dynamicTracing))) -> some AsyncSequence<(), any Error> {
+    public func`export`(by socket: Udp.Socket<some IPEndpoint>, on queue: Optional<DispatchQueue> = .none, subsystem: Optional<OSLog> = .none) -> some AsyncSequence<(), any Error> {
 		socket.send(stream: socket.recv(on: queue).compactMap { request, endpoint in
             if let subsystem {
                 os_log(.debug, log: subsystem, "request: %{public}@ from %{public}@", String(describing: request), String(describing: endpoint))
