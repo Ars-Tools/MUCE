@@ -8,14 +8,14 @@
 extension AsyncSequence where Element == Void, Failure == Never {
 	public var await: Element {
 		get async {
-			for await () in self {}
+            for await () in self where !Task.isCancelled {}
 		}
 	}
 }
 extension AsyncSequence where Element == Void {
 	public var await: Element {
 		get async throws (Failure) {
-			for try await () in self {}
+            for try await () in self where !Task.isCancelled {}
 		}
 	}
 }
