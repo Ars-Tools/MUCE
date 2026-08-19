@@ -101,6 +101,7 @@ extension Udp.Socket {
 			}
 		}
 	}
+    @inlinable
 	@discardableResult
 	public func send(data: UnsafeBufferPointer<UInt8>, to endpoint: Endpoint) throws(NWError) -> Int {
 		try send(data: data, to: endpoint).get()
@@ -118,96 +119,19 @@ extension Udp.Socket {
 			}
 		}
 	}
+    @inlinable
 	@discardableResult
 	public func send(data: Array<UInt8>, to endpoint: Endpoint) throws(NWError) -> Int {
 		try send(data: data, to: endpoint).get()
 	}
-	@usableFromInline
-	final class Dict: Sendable {
-		@usableFromInline
-		let rawValue: Mutex<Dictionary<Endpoint, ArraySlice<UInt8>>> = .init(.init())
-	}
-	public func send(stream: some AsyncSequence<(some RangeReplaceableCollection<UInt8> & Sendable, Endpoint), any Error> & Sendable, on queue: Optional<DispatchQueue> = .none) -> some AsyncSequence<Void, any Error> & Sendable {
-		AsyncThrowingStream { future in
-			let buffer = Dict()
-			let source = DispatchSource.makeWriteSource(fileDescriptor: handle, queue: queue)
-			let cancel = DispatchSemaphore(value: 0)
-			future.onTermination = {
-				switch $0 {
-				case.cancelled:
-					break
-				case.finished:
-					break
-				@unknown default:
-					break
-				}
-				buffer.rawValue.withLock {
-					if !source.isCancelled {
-						source.cancel()
-					}
-					$0.removeAll()
-				}
-				cancel.wait() // avoid bug
-			}
-			source.setEventHandler(flags: .barrier) { [weak source] in
-				buffer.rawValue.withLock {
-					guard let source, 0 < source.data else { return }
-					switch $0.popFirst() {
-					case.some((let endpoint, var packet)):
-						do {
-							try packet.removeFirst(packet.prefix(.init(source.data)).withUnsafeBufferPointer {
-								try self.send(data: $0, to: endpoint)
-							})
-							if !packet.isEmpty {
-								$0.updateValue(packet, forKey: endpoint)
-							}
-							future.yield()
-						} catch {
-							future.finish(throwing: error)
-						}
-					case.none:
-						source.suspend()
-					}
-				}
-			}
-			source.setCancelHandler(flags: .barrier) { [weak source] in
-				buffer.rawValue.withLock {
-					guard let source else { return }
-					source.resume() // avoid bug
-					$0.removeAll()
-				}
-				cancel.signal()
-			}
-			Task {
-				do {
-					for try await (packet, endpoint) in stream where [!source.isCancelled, !packet.isEmpty, !Task.isCancelled].allSatisfy(\.self) {
-						buffer.rawValue.withLock {
-							if case.none = $0[endpoint]?.append(contentsOf: packet) {
-								$0[endpoint] = .init(packet)
-							}
-						}
-						source.resume()
-					}
-					future.finish()
-				} catch {
-					future.finish(throwing: error)
-				}
-			}
-//			Task {
-//				do {
-//					for try await (var packet, endpoint) in stream {
-//						while !packet.isEmpty {
-//							try packet.removeFirst(packet.withContiguousStorageIfAvailable {
-//								try send(data: $0, to: endpoint)
-//							} ?? send(data: Array(packet), to: endpoint))
-//						}
-//					}
-//					future.finish()
-//				} catch {
-//					future.finish(throwing: error)
-//				}
-//			}
-		}
+    @inlinable
+    public func send(stream: some AsyncSequence<(some RangeReplaceableCollection<UInt8> & Sendable, Endpoint), any Error> & Sendable, on queue: Optional<DispatchQueue> = .none) -> some AsyncSequence<(), any Error> & Sendable {
+        stream.map { [self] packet, endpoint in
+            let count = try packet.withContiguousStorageIfAvailable {
+                try send(data: $0, to: endpoint)
+            } ?? send(data: Array(packet), to: endpoint)
+            assert(count == packet.count, "incomplete datagram error, no way")
+        }
 	}
 }
 extension Udp.Socket {
