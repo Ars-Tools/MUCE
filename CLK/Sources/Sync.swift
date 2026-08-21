@@ -22,14 +22,11 @@ public protocol Synchronisable: SynchroniseSource {
 	func set(rate: Float64, time anchor: CMTime, from reference: CMTime) throws
 }
 extension SynchroniseSource {
-    public func`export`(to endpoint: some IPEndpoint, on queue: Optional<DispatchQueue> = .none, subsystem: Optional<OSLog> = .none) async throws {
-		try await export(by: .init(on: endpoint), on: queue, subsystem: subsystem).await
+    public func`export`(to endpoint: some IPEndpoint, on queue: Optional<DispatchQueue> = .none) async throws {
+		try await export(by: .init(on: endpoint), on: queue).await
 	}
-    public func`export`(by socket: Udp.Socket<some IPEndpoint>, on queue: Optional<DispatchQueue> = .none, subsystem: Optional<OSLog> = .none) -> some AsyncSequence<(), any Error> {
+    public func`export`(by socket: Udp.Socket<some IPEndpoint>, on queue: Optional<DispatchQueue> = .none) -> some AsyncSequence<(), any Error> {
 		socket.send(stream: socket.recv(on: queue).compactMap { request, endpoint in
-            if let subsystem {
-                os_log(.debug, log: subsystem, "request: %{public}@ from %{public}@", String(describing: request), String(describing: endpoint))
-            }
 			let response = Array<UInt8>(unsafeUninitializedCapacity: MemoryLayout<CMTime>.stride * 4) {
 				assert($0.count == MemoryLayout<CMTime>.stride * 4)
 				guard $0.initialize(fromContentsOf: request) == MemoryLayout<CMTime>.stride * 2 else { return }
@@ -38,9 +35,6 @@ extension SynchroniseSource {
 				}
 				$1 = MemoryLayout<CMTime>.stride * 4
 			}
-            if let subsystem {
-                os_log(.debug, log: subsystem, "response: %{public}@ from %{public}@", String(describing: response), String(describing: endpoint))
-            }
 			return response.count == MemoryLayout<CMTime>.stride * 4 ?
 				.some((response, endpoint)) :
 				.none
@@ -48,55 +42,49 @@ extension SynchroniseSource {
 	}
 }
 extension Synchronisable {
-    public func`import`<Endpoint: IPEndpoint>(from endpoint: Endpoint, on queue: Optional<DispatchQueue> = .none, subsystem: Optional<OSLog> = .none) async throws {
-		let socket = try Udp.Socket<Endpoint>()
-		let notify = try CMTimebase(sourceClock: .hostTimeClock)
-		try notify.set(rate: 1)
-		let`import` = Task {
-			var anchor = (p: CMTime.invalid, t: CMTime.invalid, τ: CMTime.invalid, ε: CMTime.invalid)
-			for try await (packet, response) in socket.recv(on: queue) where (packet.count, response) == (MemoryLayout<CMTime>.stride * 4, endpoint) {
-                if let subsystem {
-                    os_log(.debug, log: subsystem, "notify: %{public}@ from %{public}@", String(describing: packet), String(describing: response))
-                }
-				let (n, r) = (time, base)
-				let (σ, s, p, τ) = packet.withUnsafeBytes { $0.loadUnaligned(as: (CMTime, CMTime, CMTime, CMTime).self) }
-				let t = CMTimeMultiplyByRatio(CMTimeAdd(r, s), multiplier: 1, divisor: 2)
-				let ε = CMTimeMultiplyByRatio(CMTimeSubtract(r, s), multiplier: 1, divisor: 2)
-				let χ = CMTimeSubtract(n, CMTimeMultiplyByFloat64(ε, multiplier: rate))
-				if σ != sign { // CMTimeCompare(σ, sign)
-                    if let subsystem {
-                        os_log(.debug, log: subsystem, "NA")
+    public func`import`<Endpoint: IPEndpoint>(from endpoint: Endpoint, on queue: Optional<DispatchQueue> = .none) async throws {
+        try await withThrowingTaskGroup {
+            let socket = try Udp.Socket<Endpoint>()
+            let notify = try CMTimebase(sourceClock: .hostTimeClock)
+            try notify.set(rate: 1)
+            $0.addTask {
+                var anchor = (p: CMTime.invalid, t: CMTime.invalid, τ: CMTime.invalid, ε: CMTime.invalid)
+                for try await (packet, response) in socket.recv(on: queue) where (packet.count, response) == (MemoryLayout<CMTime>.stride * 4, endpoint) {
+                    let (n, r) = (time, base)
+                    let (σ, s, p, τ) = packet.withUnsafeBytes { $0.loadUnaligned(as: (CMTime, CMTime, CMTime, CMTime).self) }
+                    let t = CMTimeMultiplyByRatio(CMTimeAdd(r, s), multiplier: 1, divisor: 2)
+                    let ε = CMTimeMultiplyByRatio(CMTimeSubtract(r, s), multiplier: 1, divisor: 2)
+                    let χ = CMTimeSubtract(n, CMTimeMultiplyByFloat64(ε, multiplier: rate))
+                    if σ != sign { // CMTimeCompare(σ, sign)
+                        
+                    } else if p != anchor.p {
+                        anchor.ε = .positiveInfinity
+                        anchor.p = p
+                    } else if ε < anchor.ε {
+                        anchor.ε = ε
+                        anchor.τ = τ
+                        anchor.t = t
+                    } else if ε < CMTimeAbsoluteValue(CMTimeSubtract(τ, χ)) {
+                        let dτ = τ - anchor.τ
+                        let dt = t - anchor.t
+                        let rate = dτ.seconds / dt.seconds
+                        try set(rate: rate, time: τ, from: t)
+                    } else {
+    //                    let Δτ = τ - χ
+                        let dτ = τ - anchor.τ
+                        let dt = t - anchor.t
+                        let rate = dτ.seconds / dt.seconds// + Δτ.seconds * anchor.ε.seconds / ε.seconds
+                        try set(rate: rate)
                     }
-				} else if p != anchor.p {
-					anchor.ε = .positiveInfinity
-					anchor.p = p
-				} else if ε < anchor.ε {
-					anchor.ε = ε
-					anchor.τ = τ
-					anchor.t = t
-				} else if ε < CMTimeAbsoluteValue(CMTimeSubtract(τ, χ)) {
-					let dτ = τ - anchor.τ
-					let dt = t - anchor.t
-					let rate = dτ.seconds / dt.seconds
-					try set(rate: rate, time: τ, from: t)
-				} else {
-//					let Δτ = τ - χ
-					let dτ = τ - anchor.τ
-					let dt = t - anchor.t
-					let rate = dτ.seconds / dt.seconds// + Δτ.seconds * anchor.ε.seconds / ε.seconds
-					try set(rate: rate)
-				}
-			}
-		}
-		let`export` = Task {
-			try await socket.send(stream: notify.tick(every: 1, on: queue).map { elapse in
-                let packet = withUnsafeBytes(of: (sign, base), Array<UInt8>.init)
-                if let subsystem {
-                    os_log(.debug, log: subsystem, "request: %{public}@ to %{public}@", String(describing: packet), String(describing: endpoint))
                 }
-                return (packet, endpoint)
-			}, on: queue).await
-		}
-		try await ((), ()) = (`import`.value, `export`.value)
+            }
+            $0.addTask {
+                for try await () in socket.send(stream: notify.tick(every: 1, on: queue).map { elapse in
+                    (withUnsafeBytes(of: (sign, base), Array<UInt8>.init), endpoint)
+                }, on: queue) {
+                    
+                }
+            }
+        }
 	}
 }
