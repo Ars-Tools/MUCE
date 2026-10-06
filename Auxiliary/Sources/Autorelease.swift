@@ -67,6 +67,19 @@ public enum Autorelease {
 			finalizer(reference)
 		}
 	}
+    public final class Task: Sendable {
+        @usableFromInline
+        let co: Swift.Task<Void, Never>
+        @inlinable
+        init(_ task: Swift.Task<Void, Never>) {
+            co = task
+        }
+        deinit {
+            if !co.isCancelled {
+                co.cancel()
+            }
+        }
+    }
 }
 extension Autorelease.Memory {
     @inlinable
@@ -142,4 +155,56 @@ extension Autorelease.Memory {
 	public func withUnsafeMutableBytes<R>(_ body: (UnsafeMutableRawBufferPointer) throws -> R) rethrows -> R {
 		try body(.init(start: start, count: count))
 	}
+}
+extension Autorelease.Task {
+    @inlinable@_disfavoredOverload
+    public convenience init(name: Optional<String> = .none,
+                            executorPreference: Optional<any TaskExecutor> = .none,
+                            priority: Optional<TaskPriority> = .none,
+                            operation: @escaping () async -> Void) {
+        self.init(.detached(
+            name: name,
+            executorPreference: executorPreference,
+            priority: priority,
+            operation: unsafeBitCast(operation, to: (@Sendable () async -> Void).self))
+        )
+    }
+    @inlinable@_disfavoredOverload
+    public convenience init(name: Optional<String> = .none,
+                            priority: Optional<TaskPriority> = .none,
+                            operation: @escaping () async -> Void) {
+        self.init(.detached(
+            name: name,
+            priority: priority,
+            operation: unsafeBitCast(operation, to: (@Sendable () async -> Void).self))
+        )
+    }
+}
+extension Task where Success == Void, Failure == Never {
+    @inlinable@_disfavoredOverload
+    public static func gc(name: Optional<String> = .none,
+                          executorPreference: Optional<any TaskExecutor> = .none,
+                          priority: Optional<TaskPriority> = .none,
+                          operation: @escaping () async -> Void) -> some Sendable {
+        Autorelease.Task(.detached(
+            name: name,
+            executorPreference: executorPreference,
+            priority: priority,
+            operation: unsafeBitCast(operation, to: (@Sendable () async -> Void).self))
+        )
+    }
+    @inlinable
+    public static func gc(name: Optional<String> = .none,
+                          priority: Optional<TaskPriority> = .none,
+                          operation: @escaping () async -> Void) -> some Sendable {
+        Autorelease.Task(.detached(
+            name: name,
+            priority: priority,
+            operation: unsafeBitCast(operation, to: (@Sendable () async -> Void).self))
+        )
+    }
+    @inlinable
+    public var gc: some Sendable {
+        Autorelease.Task(self)
+    }
 }
