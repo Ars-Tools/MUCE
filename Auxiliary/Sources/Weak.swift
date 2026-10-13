@@ -13,32 +13,34 @@ extension Weak {
     public static func some(_ value: Ref) -> Self {
         .init(ref: .some(value))
     }
-    public var none: Weak<Ref> {
+    public static var none: Weak<Ref> {
         .init(ref: .none)
     }
 }
 extension Weak: Sendable where Ref: Sendable {}
 extension Weak: RawRepresentable {
+    @inlinable@inline(__always)@_transparent
     public init?(rawValue: Optional<Ref>) {
         switch rawValue {
-        case.some(let valeu):
-            self.init(ref: valeu)
+        case.some(let value):
+            self.ref = value
         case.none:
             return nil
         }
     }
+    @inlinable@inline(__always)@_transparent
     public var rawValue: Optional<Ref> {
         ref
     }
 }
 extension Weak {
-    @inlinable
+    @inlinable@inline(__always)
     public subscript<R>(dynamicMember keyPath: KeyPath<Ref, R>) -> Optional<R> {
         _read {
             yield ref?[keyPath: keyPath]
         }
     }
-    @inlinable
+    @inlinable@inline(__always)
     public subscript<R>(dynamicMember keyPath: ReferenceWritableKeyPath<Ref, R>) -> Optional<R> {
         _read {
             yield ref?[keyPath: keyPath]
@@ -49,7 +51,7 @@ extension Weak {
             }
         }
     }
-    @inlinable
+    @inlinable@inline(__always)
     public subscript<R>(dynamicMember keyPath: WritableKeyPath<Ref, R>) -> Optional<R> {
         _read {
             yield ref?[keyPath: keyPath]
