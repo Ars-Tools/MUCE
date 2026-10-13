@@ -91,3 +91,17 @@ public final class Decoder: Swift.Decoder, UnkeyedDecodingContainer, SingleValue
         try T(from: self)
     }
 }
+extension AsyncSequence where Element == Array<UInt8> {
+    @inlinable
+    public func encodedBytes<T: Codable & Sendable>() -> some AsyncSequence<T, Failure> where Failure == Never {
+        compactMap {
+            try?Decoder(bytes: $0).decode(T.self)
+        }
+    }
+    @inlinable
+    public func encodedBytes<T: Codable & Sendable>() -> some AsyncSequence<T, Failure> where Failure == any Swift.Error {
+        map {
+            try Decoder(bytes: $0).decode(T.self)
+        }
+    }
+}

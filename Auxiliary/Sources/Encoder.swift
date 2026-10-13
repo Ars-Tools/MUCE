@@ -76,4 +76,17 @@ public final class Encoder: Swift.Encoder, UnkeyedEncodingContainer, SingleValue
         try value.encode(to: self)
     }
 }
-
+extension AsyncSequence where Element: Codable & Sendable {
+    @inlinable
+    public func encodedBytes() -> some AsyncSequence<Array<UInt8>, Failure> where Failure == Never {
+        compactMap {
+            try?Auxiliary.Encoder.encode($0)
+        }
+    }
+    @inlinable
+    public func encodedBytes() -> some AsyncSequence<Array<UInt8>, Failure> where Failure == any Swift.Error {
+        map {
+            try Auxiliary.Encoder.encode($0)
+        }
+    }
+}
