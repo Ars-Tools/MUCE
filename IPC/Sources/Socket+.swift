@@ -10,12 +10,20 @@ import let Darwin.SO_REUSEADDR
 import let Darwin.SO_REUSEPORT
 import let Darwin.SOL_SOCKET
 import let Darwin.IPPROTO_IP
-import func Darwin.getsockname
+import let Darwin.IFNAMSIZ
+import let Darwin.IOC_INOUT
+import let Darwin.IOCPARM_MASK
 import let Darwin.errno
+import func Darwin.getsockname
+import func Darwin.ioctl
+import func Darwin.strlcpy
 import typealias Darwin.socklen_t
 import typealias Darwin.sockaddr
 import typealias Darwin.timeval
+import typealias Darwin.ifreq
 import typealias Network.NWError
+import typealias Network.IPv4Address
+import typealias Network.IPv6Address
 extension Socket {
 	public var reuseAddr: Bool {
 		get {
@@ -114,4 +122,24 @@ extension Socket {
 			try getname().get()
 		}
 	}
+}
+extension Socket where Endpoint == IPv4Endpoint {
+    @inlinable
+    func getMTU(name: UnsafePointer<CChar>) -> Result<Int, NWError> {
+        var request = ifreq()
+        let copied = withUnsafeMutableBytes(of: &request.ifr_name) {
+            $0.withMemoryRebound(to: UInt8.self) {
+                strlcpy($0.baseAddress, name, $0.count)
+            }
+        }
+        assert(copied < .init(IFNAMSIZ))
+        // Darwin _IOWR('i', 51, struct ifreq); the SDK macro is not imported into Swift.
+        let command = UInt(IOC_INOUT)
+        | ((UInt(MemoryLayout<ifreq>.size) & UInt(IOCPARM_MASK)) << 16)
+        | (UInt(UInt8(ascii: "i")) << 8)
+        | 51
+        return ioctl(handle, command, &request) == .zero ?
+            .success(.init(request.ifr_ifru.ifru_mtu)) :
+            .failure(.posix(.init(rawValue: errno).unsafelyUnwrapped))
+    }
 }
