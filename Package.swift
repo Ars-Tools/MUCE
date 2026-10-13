@@ -22,6 +22,10 @@ let package = Package(
 			name: "MUCE.OSC",
 			targets: ["OSC"]
 		),
+        .library(
+            name: "MUCE.FSC",
+            targets: ["FSC"]
+        ),
 		.library(
 			name: "MUCE.RTP",
 			targets: ["RTP"]
@@ -90,6 +94,16 @@ let package = Package(
 			dependencies: ["OSC"],
 			path: "OSC/Tests"
 		),
+        .target(
+            name: "FSC",
+            dependencies: ["IPC", "Auxiliary"],
+            path: "FSC/Sources"
+        ),
+        .testTarget(
+            name: "FSCTests",
+            dependencies: ["FSC", "Auxiliary"],
+            path: "FSC/Tests"
+        )
 //		.target(
 //			name: "AAC",
 //			dependencies: ["IPC"],
