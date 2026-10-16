@@ -1,13 +1,13 @@
-// swift-tools-version: 6.0
+// swift-tools-version: 6.3
 // The swift-tools-version declares the minimum version of Swift required to build this package.
 import PackageDescription
 let package = Package(
     name: "MUCE",
 	platforms: [
-		.tvOS(.v18),
-		.iOS(.v18),
-		.macCatalyst(.v18),
-		.macOS(.v15)
+		.tvOS(.v26),
+		.iOS(.v26),
+		.macCatalyst(.v26),
+		.macOS(.v26)
 	],
     products: [
 		.library(
