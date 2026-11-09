@@ -20,7 +20,7 @@ extension Workspace {
 extension Workspace.Typed {
     @inlinable@_transparent@inline(__always)
     public mutating func consume(prefix count: Int) -> UnsafeMutableBufferPointer<T> {
-        precondition(count <= memory.count)
+        precondition((0...memory.count) ~= count)
         defer {
             memory.removeFirst(count)
         }
@@ -49,10 +49,9 @@ extension Workspace {
 extension Workspace.Raw {
     @inlinable@_transparent@inline(__always)
     public mutating func consume(prefix capacity: Int, alignment: Optional<Int> = .none) -> UnsafeMutableRawBufferPointer {
-        precondition(capacity <= memory.count)
-        if let alignment, let base = memory.base.baseAddress {
-            let current = Int(bitPattern: base.advanced(by: memory.startIndex))
-            switch current % alignment {
+        precondition((0...memory.count) ~= capacity)
+        if let alignment, let address = UnsafeMutableRawBufferPointer(rebasing: memory).baseAddress.map(Int.init(bitPattern:)) {
+            switch address % alignment {
             case 0:
                 break
             case let remainder:
@@ -65,12 +64,11 @@ extension Workspace.Raw {
         return.init(rebasing: memory.prefix(capacity))
     }
     @inlinable@_transparent@inline(__always)
-    public mutating func consume<T: BitwiseCopyable>(as type: T.Type, capacity: Int) -> UnsafeMutableBufferPointer<T> {
+    public mutating func consume<T: BitwiseCopyable>(as type: T.Type = T.self, capacity: Int) -> UnsafeMutableBufferPointer<T> {
         consume(prefix: capacity * MemoryLayout<T>.stride, alignment: .some(MemoryLayout<T>.alignment)).bindMemory(to: T.self)
     }
-    @_disfavoredOverload
     @inlinable@_transparent@inline(__always)
-    public mutating func consume<T: BitwiseCopyable>(as type: T.Type = T.self, capacity: Int) -> Workspace.Typed<T> {
+    public mutating func consume<T: BitwiseCopyable>(as type: T.Type = T.self, workspace capacity: Int) -> Workspace.Typed<T> {
         .init(base: consume(as: T.self, capacity: capacity))
     }
 }
