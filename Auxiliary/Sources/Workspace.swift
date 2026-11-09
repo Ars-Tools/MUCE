@@ -4,9 +4,11 @@
 //
 //  Created by Kota on 11/9/26.
 //
-public enum Workspace {}
+public enum Workspace {
+    public protocol `Protocol`: ~Copyable {}
+}
 extension Workspace {
-    public struct Typed<T: BitwiseCopyable>: ~Copyable {
+    public struct Typed<T: BitwiseCopyable>: `Protocol` {
         @usableFromInline
         var memory: UnsafeMutableBufferPointer<T>.SubSequence
         @inlinable@_transparent@inline(__always)
@@ -35,7 +37,7 @@ extension Workspace {
     }
 }
 extension Workspace {
-    public struct Raw: ~Copyable {
+    public struct Raw: `Protocol` {
         @usableFromInline
         var memory: UnsafeMutableRawBufferPointer.SubSequence
         @inlinable@_transparent@inline(__always)
@@ -63,8 +65,13 @@ extension Workspace.Raw {
         return.init(rebasing: memory.prefix(capacity))
     }
     @inlinable@_transparent@inline(__always)
-    public mutating func consume<T: BitwiseCopyable>(of type: T.Type, capacity: Int) -> UnsafeMutableBufferPointer<T> {
+    public mutating func consume<T: BitwiseCopyable>(as type: T.Type, capacity: Int) -> UnsafeMutableBufferPointer<T> {
         consume(prefix: capacity * MemoryLayout<T>.stride, alignment: .some(MemoryLayout<T>.alignment)).bindMemory(to: T.self)
+    }
+    @_disfavoredOverload
+    @inlinable@_transparent@inline(__always)
+    public mutating func consume<T: BitwiseCopyable>(as type: T.Type = T.self, capacity: Int) -> Workspace.Typed<T> {
+        .init(base: consume(as: T.self, capacity: capacity))
     }
 }
 extension Workspace {
