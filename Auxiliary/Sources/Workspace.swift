@@ -48,24 +48,27 @@ extension Workspace {
 }
 extension Workspace.Raw {
     @inlinable@_transparent@inline(__always)
-    public mutating func consume(prefix capacity: Int, alignment: Optional<Int> = .none) -> UnsafeMutableRawBufferPointer {
+    public mutating func consume(prefix capacity: Int) -> UnsafeMutableRawBufferPointer {
         precondition((0...memory.count) ~= capacity)
-        if let alignment, let address = UnsafeMutableRawBufferPointer(rebasing: memory).baseAddress.map(Int.init(bitPattern:)) {
-            switch address % alignment {
-            case 0:
-                break
-            case let remainder:
-                memory.removeFirst(alignment - remainder)
-            }
-        }
         defer {
             memory.removeFirst(capacity)
         }
         return.init(rebasing: memory.prefix(capacity))
     }
     @inlinable@_transparent@inline(__always)
+    public mutating func align(to alignment: Int) {
+        precondition(alignment.nonzeroBitCount == 1)
+        switch memory.base.baseAddress.map(Int.init(bitPattern:)).map(memory.startIndex.advanced(by:)).unsafelyUnwrapped % alignment {
+        case.zero:
+            break
+        case let remainder:
+            memory.removeFirst(alignment - remainder)
+        }
+        assert(memory.base.baseAddress.map(Int.init(bitPattern:)).map(memory.startIndex.advanced(by:)).unsafelyUnwrapped % alignment == .zero)
+    }
+    @inlinable@_transparent@inline(__always)
     public mutating func consume<T: BitwiseCopyable>(as type: T.Type = T.self, capacity: Int) -> UnsafeMutableBufferPointer<T> {
-        consume(prefix: capacity * MemoryLayout<T>.stride, alignment: .some(MemoryLayout<T>.alignment)).bindMemory(to: T.self)
+        consume(prefix: capacity * MemoryLayout<T>.stride).bindMemory(to: T.self)
     }
     @inlinable@_transparent@inline(__always)
     public mutating func consume<T: BitwiseCopyable>(as type: T.Type = T.self, workspace capacity: Int) -> Workspace.Typed<T> {
